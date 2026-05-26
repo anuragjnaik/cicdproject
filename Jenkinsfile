@@ -10,13 +10,13 @@ pipeline {
         }
 
 
-           stage('Install Python Dependencies') {
-            steps {
-                sh '''
-                pip3 install -r requirements.txt
-                '''
-            }
-        }
+        stage('Install Python Dependencies') {
+    steps {
+        sh '''
+        pip3 install --break-system-packages -r requirements.txt
+        '''
+    }
+}
 
 
         stage('Build Docker Image') {
