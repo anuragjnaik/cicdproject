@@ -86,7 +86,7 @@ pipeline {
 
                 stage('Trivy Scan') {
             steps {
-                sh 'trivy image --format json --output result.json --severity HIGH,CRITICAL anuragjnaik/cicdproject:latest
+                sh 'trivy image --format json --output result.json --severity HIGH,CRITICAL anuragjnaik/cicdproject:latest'
                     archiveArtifacts artifacts: 'result.json', followSymlinks: false
             
             }
