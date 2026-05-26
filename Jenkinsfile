@@ -31,14 +31,17 @@ pipeline {
         stage('Analyzing Code Quality') {
             steps {
 
+                withCredentials([string(credentialsId: 'sonartoken', variable: 'sonar_token')]) {
+
                 sh '''
                 /opt/sonar-scanner/bin/sonar-scanner \
                 -Dsonar.projectKey=anuragow_myproject1 \
                 -Dsonar.organization=anuragow \
                 -Dsonar.sources=. \
                 -Dsonar.host.url=https://sonarcloud.io \
-                -Dsonar.login=$sonartoken
+                -Dsonar.login=$sonar_token
                 '''
+                }
             }
         }
 
