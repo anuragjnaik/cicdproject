@@ -1,98 +1,15 @@
 pipeline {
     agent any
 
-    environment {
-        PACKAGE_NAME = "my_package"
-        PYTHON       = "python3"
-        VENV_DIR     = "venv"
-    }
-
     stages {
 
-        stage('Checkout') {
+        stage('Clone Repository') {
             steps {
-                echo 'Checking out source code...'
-                checkout scm
+                git branch: 'main', url: 'https://github.com/anuragjnaik/cicdproject.git'
             }
         }
 
-        stage('Install Python Venv') {
-            steps {
-                sh '''
-                sudo apt-get update
-                sudo apt-get install python3-venv -y
-                '''
-            }
-        }
-
-        stage('Setup Python Environment') {
-            steps {
-                echo 'Creating virtual environment...'
-                sh """
-                    ${PYTHON} -m venv ${VENV_DIR}
-                    . ${VENV_DIR}/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
-                """
-            }
-        }
-
-        stage('Install Build Package') {
-            steps {
-                sh """
-                    . ${VENV_DIR}/bin/activate
-                    pip install build
-                """
-            }
-        }
-
-        stage('Build WHL Package') {
-            steps {
-                echo 'Building wheel package...'
-                sh """
-                    . ${VENV_DIR}/bin/activate
-                    python -m build
-                """
-            }
-        }
-
-        stage('Archive Artifacts') {
-            steps {
-                echo 'Archiving dist artifacts...'
-                archiveArtifacts artifacts: 'dist/*.whl, dist/*.tar.gz',
-                                 fingerprint: true,
-                                 allowEmptyArchive: false
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-
-                sh '''
-                docker build -t anuragjnaik/cicdproject:latest .
-                '''
-            }
-        }
-
-        stage('Push Docker Image') {
-            steps {
-
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub',
-                    usernameVariable: 'USERNAME',
-                    passwordVariable: 'PASSWORD'
-                )]) {
-
-                    sh '''
-                    echo $PASSWORD | docker login -u $USERNAME --password-stdin
-
-                    docker push anuragjnaik/cicdproject:latest
-                    '''
-                }
-            }
-        }
-
-        stage('Install SonarScanner') {
+                stage('Install SonarScanner') {
             steps {
 
                 sh '''
@@ -124,5 +41,25 @@ pipeline {
                 '''
             }
         }
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t anuragjnaik/cicdproject:latest -f Dockerfile .'
+            }
+        }
+
+        stage('Push') {
+            steps {
+              withCredentials([usernamePassword(credentialsId: 'dockerlogin', passwordVariable: 'password', usernameVariable: 'username')]) {
+    
+
+                sh '''
+                echo $password | docker login -u $username --password-stdin
+
+                docker push anuragjnaik/cicdproject:latest
+                '''
+            }
+        }
+}
     }
 }
