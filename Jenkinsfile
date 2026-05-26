@@ -50,7 +50,7 @@ pipeline {
 
         stage('Push') {
             steps {
-              withCredentials([usernamePassword(credentialsId: 'dockerlogin', passwordVariable: 'password', usernameVariable: 'username')]) {
+              withCredentials([usernamePassword(credentialsId: 'docker login', passwordVariable: 'password', usernameVariable: 'username')]) {
     
 
                 sh '''
