@@ -97,5 +97,12 @@ pipeline {
    mail bcc: '', body: 'output of cicd project', cc: '', from: 'naikanurag6003@gmail.com', replyTo: '', subject: 'pipeline', to: 'jn.anurag497@gmail.com'
     }
 }
+
+         stage('slack') {
+            steps {
+  slackSend channel: 'all-jenkinsworkspace', message: 'output of cicd', tokenCredentialId: 'slack'
+    }
+}
+        
     }
 }
