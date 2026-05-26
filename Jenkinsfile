@@ -1,5 +1,4 @@
 pipeline {
-
     agent any
 
     environment {
@@ -28,14 +27,11 @@ pipeline {
 
         stage('Setup Python Environment') {
             steps {
-
+                echo 'Creating virtual environment...'
                 sh """
                     ${PYTHON} -m venv ${VENV_DIR}
-
                     . ${VENV_DIR}/bin/activate
-
                     pip install --upgrade pip
-
                     pip install -r requirements.txt
                 """
             }
@@ -43,10 +39,8 @@ pipeline {
 
         stage('Install Build Package') {
             steps {
-
                 sh """
                     . ${VENV_DIR}/bin/activate
-
                     pip install build
                 """
             }
@@ -54,10 +48,9 @@ pipeline {
 
         stage('Build WHL Package') {
             steps {
-
+                echo 'Building wheel package...'
                 sh """
                     . ${VENV_DIR}/bin/activate
-
                     python -m build
                 """
             }
@@ -65,9 +58,10 @@ pipeline {
 
         stage('Archive Artifacts') {
             steps {
-
+                echo 'Archiving dist artifacts...'
                 archiveArtifacts artifacts: 'dist/*.whl, dist/*.tar.gz',
-                fingerprint: true
+                                 fingerprint: true,
+                                 allowEmptyArchive: false
             }
         }
 
