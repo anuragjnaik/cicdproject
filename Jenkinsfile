@@ -37,7 +37,7 @@ pipeline {
                 -Dsonar.organization=anuragow \
                 -Dsonar.sources=. \
                 -Dsonar.host.url=https://sonarcloud.io \
-                -Dsonar.login=2768594d881140b713e584eb57b4f2f8478135cd
+                -Dsonar.login=$sonartoken
                 '''
             }
         }
