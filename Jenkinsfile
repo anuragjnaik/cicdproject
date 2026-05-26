@@ -14,5 +14,19 @@ pipeline {
                 sh 'docker build -t anuragjnaik/cicdproject:latest -f Dockerfile .'
             }
         }
+
+                stage('Push') {
+            steps {
+              withCredentials([usernamePassword(credentialsId: 'docker login', passwordVariable: 'password', usernameVariable: 'username')]) {
+    
+
+                sh '''
+                echo $password | docker login -u $username --password-stdin
+
+                docker push anuragjnaik/cicdproject:latest
+                '''
+            }
+        }
+}
       }
     } 
