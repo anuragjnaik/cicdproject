@@ -1,52 +1,102 @@
 pipeline {
+
     agent any
+
+    environment {
+        PACKAGE_NAME = "my_package"
+        PYTHON       = "python3"
+        VENV_DIR     = "venv"
+    }
 
     stages {
 
-        stage('Clone Repository') {
+        stage('Checkout') {
             steps {
-               git branch: 'main', url: 'https://github.com/anuragjnaik/cicdproject.git'
+                echo 'Checking out source code...'
+                checkout scm
             }
         }
 
+        stage('Install Python Venv') {
+            steps {
+                sh '''
+                sudo apt-get update
+                sudo apt-get install python3-venv -y
+                '''
+            }
+        }
 
-        stage('Install Python Dependencies') {
-    steps {
-        sh '''
-        pip3 install --break-system-packages -r requirements.txt
-        '''
-    }
-}
+        stage('Setup Python Environment') {
+            steps {
 
+                sh """
+                    ${PYTHON} -m venv ${VENV_DIR}
+
+                    . ${VENV_DIR}/bin/activate
+
+                    pip install --upgrade pip
+
+                    pip install -r requirements.txt
+                """
+            }
+        }
+
+        stage('Install Build Package') {
+            steps {
+
+                sh """
+                    . ${VENV_DIR}/bin/activate
+
+                    pip install build
+                """
+            }
+        }
+
+        stage('Build WHL Package') {
+            steps {
+
+                sh """
+                    . ${VENV_DIR}/bin/activate
+
+                    python -m build
+                """
+            }
+        }
+
+        stage('Archive Artifacts') {
+            steps {
+
+                archiveArtifacts artifacts: 'dist/*.whl, dist/*.tar.gz',
+                fingerprint: true
+            }
+        }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t anuragjnaik/cicdproject:latest -f Dockerfile .'
-            }
-        }
-
-                stage('Push') {
-            steps {
-              withCredentials([usernamePassword(credentialsId: 'docker login', passwordVariable: 'password', usernameVariable: 'username')]) {
-    
 
                 sh '''
-                echo $password | docker login -u $username --password-stdin
-
-                docker push anuragjnaik/cicdproject:latest
-                '''
-            }
-        }
-}
-
-         stage('Run Container') {
-            steps {
-                sh '''
-                docker run -d -p 5000:5000 anuragjnaik/cicdproject:latest
+                docker build -t anuragjnaik/cicdproject:latest .
                 '''
             }
         }
 
+        stage('Push Docker Image') {
+            steps {
+
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub',
+                    usernameVariable: 'USERNAME',
+                    passwordVariable: 'PASSWORD'
+                )]) {
+
+                    sh '''
+                    echo $PASSWORD | docker login -u $USERNAME --password-stdin
+
+                    docker push anuragjnaik/cicdproject:latest
+                    '''
+                }
+            }
+        }
 
         stage('Install SonarScanner') {
             steps {
@@ -66,20 +116,19 @@ pipeline {
                 '''
             }
         }
-stage('Analyzing Code Quality') {
-    steps {
 
-        sh '''
-        /opt/sonar-scanner/bin/sonar-scanner \
-        -Dsonar.projectKey=anuragow_myproject1 \
-        -Dsonar.organization=anuragow \
-        -Dsonar.qualitygate.wait=false \
-        -Dsonar.qualitygate.timeout=300 \
-        -Dsonar.sources=. \
-        -Dsonar.host.url=https://sonarcloud.io \
-        -Dsonar.login=2768594d881140b713e584eb57b4f2f8478135cd
-        '''
+        stage('Analyzing Code Quality') {
+            steps {
+
+                sh '''
+                /opt/sonar-scanner/bin/sonar-scanner \
+                -Dsonar.projectKey=anuragow_myproject1 \
+                -Dsonar.organization=anuragow \
+                -Dsonar.sources=. \
+                -Dsonar.host.url=https://sonarcloud.io \
+                -Dsonar.login=2768594d881140b713e584eb57b4f2f8478135cd
+                '''
+            }
+        }
     }
 }
-      }
-    } 
