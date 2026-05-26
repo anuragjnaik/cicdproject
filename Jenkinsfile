@@ -64,5 +64,32 @@ pipeline {
             }
         }
 }
+
+             stage('Install Trivy') {
+            steps {
+                sh '''
+                sudo apt-get install wget gnupg -y
+
+                wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | \
+                gpg --dearmor | \
+                sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+
+                echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | \
+                sudo tee -a /etc/apt/sources.list.d/trivy.list
+
+                sudo apt-get update
+
+                sudo apt-get install trivy -y
+                '''
+            }
+        }
+
+                stage('Trivy Scan') {
+            steps {
+                sh 'trivy image --format json --output result.json --severity HIGH,CRITICAL anuragjnaik/cicdproject:latest
+                    archiveArtifacts artifacts: 'result.json', followSymlinks: false
+            
+            }
+        }
     }
 }
